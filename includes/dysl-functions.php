@@ -1,15 +1,5 @@
 <?php
-
-define('DYSL_SHORTLINKS_OPTION_NAME', 'dysl_short_links');
-define('DYSL_ENDPOINT_OPTION_NAME', 'dysl_api_endpoint');
-define('DYSL_SETTINGS_PAGE_TITLE', 'Dynamic Shortlinks');
-define('DYSL_SETTINGS_MENU_LINK_NAME', 'Dynamic Shortlinks');
-define('DYSL_SETTINGS_PAGE_SLUG', 'dynamic-shortlinks-settings-configuration');
-define('DYSL_SHORTCODE_PREFIX', 'dysl_');
-
-/*
-    Add page to Settings menu
-*/
+// Add page to Settings menu
 add_action( 'admin_menu', 'dysl_add_settings_page_func' );
 function dysl_add_settings_page_func() {
     add_options_page(
@@ -21,6 +11,7 @@ function dysl_add_settings_page_func() {
         );
 }
 
+// Register API endpoint fields
 add_action( 'admin_init', 'dysl_register_settings_func' );
 function dysl_register_settings_func() {
     register_setting( 'dysl_setup_config', DYSL_ENDPOINT_OPTION_NAME, array('sanitize_callback' => 'sanitize_text_field') );
@@ -41,7 +32,7 @@ function dysl_api_endpoint_field_func() {
 
 function dysl_render_settings_page_func() {
     if (isset($_POST['refresh_options']) && check_admin_referer('refresh_options_nonce')) {
-        dysl_fetch_options_data();
+        dysl_fetch_options_data_func();
     }
     ?>
     <h3>Configured shortcodes</h3>
@@ -80,9 +71,7 @@ function dysl_render_settings_page_func() {
     <?php
 }
 
-/*
-    Add shortcodes
-*/
+// Add shortcodes
 add_action( 'init', 'dysl_add_shortcodes_func' );
 function dysl_add_shortcodes_func() {
     $options = get_option(DYSL_SHORTLINKS_OPTION_NAME);
@@ -96,15 +85,13 @@ function dysl_add_shortcodes_func() {
 function dysl_get_shortcode_value_func($atts, $content, $shortcode_tag){
     $options = get_option(DYSL_SHORTLINKS_OPTION_NAME);
     if($options){
-        return $options[str_replace(DYSL_SHORTCODE_PREFIX, '', $shortcode_tag)];
+        return htmlspecialchars($options[str_replace(DYSL_SHORTCODE_PREFIX, '', $shortcode_tag)]);
     }
     return '';
 }
 
-/*
-    refresh options data
-*/
-function dysl_fetch_options_data(){
+// Refresh options data
+function dysl_fetch_options_data_func(){
     $endpoint = get_option(DYSL_ENDPOINT_OPTION_NAME);
     if($endpoint){
         $response = wp_remote_get($endpoint);
@@ -117,7 +104,7 @@ function dysl_fetch_options_data(){
     }
 }
 
-
+// Code to parse response body from options refresh
 function dysl_response_body_parser_func($body){
     $decoded = json_decode($body, true);
 

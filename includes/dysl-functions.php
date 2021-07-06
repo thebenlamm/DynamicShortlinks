@@ -3,7 +3,7 @@
 define('DYSL_SHORTLINKS_OPTION_NAME', 'dysl_short_links');
 define('DYSL_ENDPOINT_OPTION_NAME', 'dysl_api_endpoint');
 define('DYSL_SETTINGS_PAGE_TITLE', 'Dynamic Shortlinks');
-define('DYSL_SETTINGS_MENU_LINK_NAME', 'DynaLinks');
+define('DYSL_SETTINGS_MENU_LINK_NAME', 'Dynamic Shortlinks');
 define('DYSL_SETTINGS_PAGE_SLUG', 'dynamic-shortlinks-settings-configuration');
 define('DYSL_SHORTCODE_PREFIX', 'dysl_');
 
@@ -119,5 +119,14 @@ function dysl_fetch_options_data(){
 
 
 function dysl_response_body_parser_func($body){
-    return json_decode($body, true);
+    $decoded = json_decode($body, true);
+
+    function sum($arr, $item){
+        $name = $item["fields"]["Name"];
+        $price = $item["fields"]["Price"];
+        $arr[$name] = $price;
+        return $arr;
+    }
+
+    return array_reduce($decoded["records"], "sum");
 }

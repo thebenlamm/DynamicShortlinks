@@ -109,7 +109,7 @@ function dysl_response_body_parser_func($body){
     $decoded = json_decode($body, true);
 
     function sum($arr, $item){
-        $name = $item["fields"]["Name"];
+        $name = str_replace(' ', '_', $item["fields"]["Name"]);
         $price = $item["fields"]["Price"];
         $arr[$name] = $price;
         return $arr;

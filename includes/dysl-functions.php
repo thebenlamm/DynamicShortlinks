@@ -11,25 +11,6 @@ function dysl_add_settings_page_func() {
         );
 }
 
-// Register API endpoint fields
-add_action( 'admin_init', 'dysl_register_settings_func' );
-function dysl_register_settings_func() {
-    register_setting( 'dysl_setup_config', DYSL_ENDPOINT_OPTION_NAME, array('sanitize_callback' => 'sanitize_text_field') );
-
-    add_settings_section( 'dysl_setup_config_section', 'Dynamic Shortlinks Configuration', 'dysl_setup_config_section_func', 'dysl_setup_config_page' );
-    add_settings_field( 'api_endpoint_field', 'API Endpoint', 'dysl_api_endpoint_field_func', 'dysl_setup_config_page', 'dysl_setup_config_section' );
-}
-
-function dysl_setup_config_section_func() {
-    echo '<p>Please enter the full api endpoint below.</p>';
-}
-
-function dysl_api_endpoint_field_func() {
-    $option = get_option( DYSL_ENDPOINT_OPTION_NAME );
-    $value = $option ? esc_attr($option) : '';
-    echo "<input id='dysl_api_endpoint_field' name='" . DYSL_ENDPOINT_OPTION_NAME . "' type='text' value='" . $value . "' style='width: 80%'/>";
-}
-
 function dysl_render_settings_page_func() {
     if (isset($_POST['refresh_options']) && check_admin_referer('refresh_options_nonce')) {
         dysl_fetch_options_data_func();
@@ -61,13 +42,6 @@ function dysl_render_settings_page_func() {
             if(get_option(DYSL_ENDPOINT_OPTION_NAME)) submit_button('Refresh');
         ?>
     </form>
-    <hr>
-    <form action="options.php" method="post">
-        <?php 
-        settings_fields( 'dysl_setup_config' );
-        do_settings_sections( 'dysl_setup_config_page' ); ?>
-        <input name="submit" class="button button-primary" type="submit" value="<?php esc_attr_e( 'Save' ); ?>" />
-    </form>
     <?php
 }
 
@@ -92,14 +66,18 @@ function dysl_get_shortcode_value_func($atts, $content, $shortcode_tag){
 
 // Refresh options data
 function dysl_fetch_options_data_func(){
-    $endpoint = get_option(DYSL_ENDPOINT_OPTION_NAME);
+    $property = parse_url( get_site_url(), PHP_URL_HOST );
+    $endpoint = "https://2bgkw8jl54.execute-api.us-east-1.amazonaws.com/v1/dynamic-shortlink-middleman?property=$property";
     if($endpoint){
-        $response = wp_remote_get($endpoint);
+        $response = wp_remote_get($endpoint, array('headers' => array('x-api-key' => 'a0bTB4gOty7UPD0FNfUnL6M18hMg6SwK2RrXKLZD')));
         $body     = wp_remote_retrieve_body( $response );
-        $options = dysl_response_body_parser_func($body);
-        $option_added = add_option( DYSL_SHORTLINKS_OPTION_NAME, $options );
+        $new_options = dysl_response_body_parser_func($body);
+        $old_options = get_option(DYSL_SHORTLINKS_OPTION_NAME);
+        if($new_options == $old_options) return;
+        wp_cache_flush();
+        $option_added = add_option( DYSL_SHORTLINKS_OPTION_NAME, $new_options );
         if(!$option_added){
-            update_option(DYSL_SHORTLINKS_OPTION_NAME, $options);
+            update_option(DYSL_SHORTLINKS_OPTION_NAME, $new_options);
         }
     }
 }
@@ -107,13 +85,13 @@ function dysl_fetch_options_data_func(){
 // Code to parse response body from options refresh
 function dysl_response_body_parser_func($body){
     $decoded = json_decode($body, true);
-
+    
     function sum($arr, $item){
-        $name = str_replace(' ', '_', $item["fields"]["Name"]);
-        $price = $item["fields"]["Price"];
-        $arr[$name] = $price;
+        $key = str_replace(' ', '_', $item[0]);
+        $value = $item[1];
+        $arr[$key] = $value;
         return $arr;
     }
 
-    return array_reduce($decoded["records"], "sum");
+    return array_reduce($decoded, "sum");
 }

@@ -66,7 +66,7 @@ function dysl_get_shortcode_value_func($atts, $content, $shortcode_tag){
 
 // Refresh options data
 function dysl_fetch_options_data_func(){
-    $property = parse_url( get_site_url(), PHP_URL_HOST );
+    $property = str_replace(".com", "", parse_url( get_site_url(), PHP_URL_HOST ));
     $endpoint = "https://2bgkw8jl54.execute-api.us-east-1.amazonaws.com/v1/dynamic-shortlink-middleman?property=$property";
     if($endpoint){
         $response = wp_remote_get($endpoint, array('headers' => array('x-api-key' => 'a0bTB4gOty7UPD0FNfUnL6M18hMg6SwK2RrXKLZD')));

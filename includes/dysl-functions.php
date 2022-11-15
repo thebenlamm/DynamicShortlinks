@@ -71,6 +71,8 @@ function dysl_fetch_options_data_func(){
     $response = wp_remote_get($endpoint, array('headers' => array('x-api-key' => 'a0bTB4gOty7UPD0FNfUnL6M18hMg6SwK2RrXKLZD')));
     $body     = wp_remote_retrieve_body( $response );
     $new_options = dysl_response_body_parser_func($body);
+    if (!$new_options) return;
+    
     $old_options = get_option(DYSL_SHORTLINKS_OPTION_NAME);
     if($new_options == $old_options) return;
     if (class_exists('\LiteSpeed\Purge')) {
@@ -84,14 +86,19 @@ function dysl_fetch_options_data_func(){
 
 // Code to parse response body from options refresh
 function dysl_response_body_parser_func($body){
-    $decoded = json_decode($body, true);
+    try {
+        $decoded = json_decode($body, true);
     
-    function sum($arr, $item){
-        $key = str_replace(' ', '_', $item[0]);
-        $value = $item[1];
-        $arr[$key] = $value;
-        return $arr;
-    }
+        function func($arr, $item){
+            $key = str_replace(' ', '_', $item[0]);
+            $value = $item[1];
+            $arr[$key] = $value;
+            return $arr;
+        }
 
-    return array_reduce($decoded, "sum");
+        return array_reduce($decoded, "func");
+    } catch (Exception $ex) {
+        echo $ex->getMessage();
+        return false;
+    }
 }

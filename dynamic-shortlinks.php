@@ -10,13 +10,12 @@ License URI: https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
 define('DYSL_SHORTLINKS_OPTION_NAME', 'dysl_short_links');
-define('DYSL_ENDPOINT_OPTION_NAME', 'dysl_api_endpoint');
 define('DYSL_SETTINGS_PAGE_TITLE', 'Dynamic Shortlinks');
 define('DYSL_SETTINGS_MENU_LINK_NAME', 'Dynamic Shortlinks');
 define('DYSL_SETTINGS_PAGE_SLUG', 'dynamic-shortlinks-settings-configuration');
 define('DYSL_SHORTCODE_PREFIX', 'dysl_');
 
-error_reporting(E_ALL);
+// error_reporting(E_ALL);
 
 require_once plugin_dir_path(__FILE__) . 'includes/dysl-functions.php';
 require_once plugin_dir_path(__FILE__) . 'includes/dysl-cron.php';

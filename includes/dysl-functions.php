@@ -72,8 +72,13 @@ function dysl_fetch_options_data_func(){
         $endpoint = "https://2bgkw8jl54.execute-api.us-east-1.amazonaws.com/v1/dynamic-shortlink-middleman?property=$property";
         $response = wp_remote_get($endpoint, array('headers' => array('x-api-key' => 'a0bTB4gOty7UPD0FNfUnL6M18hMg6SwK2RrXKLZD')));
         $body     = wp_remote_retrieve_body( $response );
-
         error_log("DYSL: Response body: " . $body);
+
+        if(!is_array(json_decode($body, true))) {
+            error_log("DYSL: Response body is not an array");
+            return false;
+        }
+
         $new_options = dysl_response_body_parser_func($body);
 
         error_log("DYSL: New options: " . print_r($new_options, true));

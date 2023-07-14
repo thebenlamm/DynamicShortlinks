@@ -66,21 +66,35 @@ function dysl_get_shortcode_value_func($atts, $content, $shortcode_tag){
 
 // Refresh options data
 function dysl_fetch_options_data_func(){
-    $property = str_replace("www.", "", str_replace(".com", "", parse_url( get_site_url(), PHP_URL_HOST )));
-    $endpoint = "https://2bgkw8jl54.execute-api.us-east-1.amazonaws.com/v1/dynamic-shortlink-middleman?property=$property";
-    $response = wp_remote_get($endpoint, array('headers' => array('x-api-key' => 'a0bTB4gOty7UPD0FNfUnL6M18hMg6SwK2RrXKLZD')));
-    $body     = wp_remote_retrieve_body( $response );
-    $new_options = dysl_response_body_parser_func($body);
-    if (!$new_options) return;
-    
-    $old_options = get_option(DYSL_SHORTLINKS_OPTION_NAME);
-    if($new_options == $old_options) return;
-    if (class_exists('\LiteSpeed\Purge')) {
-        \LiteSpeed\Purge::purge_all();
-    }
-    $option_added = add_option( DYSL_SHORTLINKS_OPTION_NAME, $new_options );
-    if(!$option_added){
-        update_option(DYSL_SHORTLINKS_OPTION_NAME, $new_options);
+    try {
+        error_log("DYSL: Fetching options data");
+        $property = str_replace("www.", "", str_replace(".com", "", parse_url( get_site_url(), PHP_URL_HOST )));
+        $endpoint = "https://2bgkw8jl54.execute-api.us-east-1.amazonaws.com/v1/dynamic-shortlink-middleman?property=$property";
+        $response = wp_remote_get($endpoint, array('headers' => array('x-api-key' => 'a0bTB4gOty7UPD0FNfUnL6M18hMg6SwK2RrXKLZD')));
+        $body     = wp_remote_retrieve_body( $response );
+
+        error_log("DYSL: Response body: " . $body);
+        $new_options = dysl_response_body_parser_func($body);
+
+        error_log("DYSL: New options: " . print_r($new_options, true));
+        if (!$new_options) return;
+        
+        $old_options = get_option(DYSL_SHORTLINKS_OPTION_NAME);
+        if($new_options == $old_options) return;
+
+        error_log("DYSL: Options changed, purging cache");
+        if (class_exists('\LiteSpeed\Purge')) {
+            \LiteSpeed\Purge::purge_all();
+            error_log("DYSL: Purged LiteSpeed cache");
+        }
+        $option_added = add_option( DYSL_SHORTLINKS_OPTION_NAME, $new_options );
+        error_log("DYSL: Option added: " . $option_added);
+        if(!$option_added){
+            update_option(DYSL_SHORTLINKS_OPTION_NAME, $new_options);
+            error_log("DYSL: Option updated");
+        }
+    } catch (Exception $ex) {
+        error_log("DYSL: Error fetching options data: " . $ex->getMessage());
     }
 }
 

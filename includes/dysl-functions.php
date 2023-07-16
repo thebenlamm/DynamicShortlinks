@@ -64,19 +64,35 @@ function dysl_get_shortcode_value_func($atts, $content, $shortcode_tag){
     return '';
 }
 
+function dysl_get_body(){
+    error_log("DYSL: Fetching options data");
+    $property = str_replace("www.", "", str_replace(".com", "", parse_url( get_site_url(), PHP_URL_HOST )));
+    $endpoint = "https://2bgkw8jl54.execute-api.us-east-1.amazonaws.com/v1/dynamic-shortlink-middleman?property=$property";
+    $response = wp_remote_get($endpoint, array('headers' => array('x-api-key' => 'a0bTB4gOty7UPD0FNfUnL6M18hMg6SwK2RrXKLZD')));
+    $body     = wp_remote_retrieve_body( $response );
+    error_log("DYSL: Response body: " . $body);
+
+    if( array_key_exists("message", json_decode($body, true)) ) {
+        error_log("DYSL: Response body is not an array");
+        return false;
+    }
+
+    return $body;
+}
+
 // Refresh options data
 function dysl_fetch_options_data_func(){
     try {
-        error_log("DYSL: Fetching options data");
-        $property = str_replace("www.", "", str_replace(".com", "", parse_url( get_site_url(), PHP_URL_HOST )));
-        $endpoint = "https://2bgkw8jl54.execute-api.us-east-1.amazonaws.com/v1/dynamic-shortlink-middleman?property=$property";
-        $response = wp_remote_get($endpoint, array('headers' => array('x-api-key' => 'a0bTB4gOty7UPD0FNfUnL6M18hMg6SwK2RrXKLZD')));
-        $body     = wp_remote_retrieve_body( $response );
-        error_log("DYSL: Response body: " . $body);
+        $body = dysl_get_body();
 
-        if(!is_array(json_decode($body, true))) {
-            error_log("DYSL: Response body is not an array");
-            return false;
+        // if body is false try once more and then give up
+        if(!$body){
+            error_log("DYSL: Body is false, trying once more");
+            $body = dysl_get_body();
+            if(!$body){
+                error_log("DYSL: Body is false, giving up");
+                return;
+            }
         }
 
         $new_options = dysl_response_body_parser_func($body);
